@@ -28,8 +28,6 @@ while isempty(passData)
 end
 f = passData.f;
 ny = passData.ny;
-indf = 1;
-indfOld = 1;
 
 %%                   Create a FRD object that will be filled in the process
 nf = length(f);
@@ -56,19 +54,12 @@ catch
     statGUIg.ny=ny;
 end
 %keyboard
-pause(5)
 while 1
     %keyboard
     %% Get indf, H and C from main process
     if exist('StopTheGUI','var'),quit,end
-    passData = GetDataFromFile(1,'passData',opt);
+    keyboard
     if ~isempty(passData)
-        indf = passData.indf;
-        H = passData.H;
-        C = passData.C;
-        FRD.ResponseData(:,1,indf) = H;
-    end
-    if ~isempty(passData) && ~isequal(indf, indfOld)
         pause(0.001)
         try
             %ReadDatagram(u)% indf should be passed to workspace
@@ -76,12 +67,11 @@ while 1
             %ReadDatagram(u)% Hi=imag(H) should be passed to workspace
             %ReadDatagram(u)% C should be passed to workspace
             %H=Hr+1i*Hi;
-%             passData = GetDataFromFile(1,'passData',opt);
-%             indf = passData.indf;
-%             H = passData.H;
-%             C = passData.C;
-%             FRD.ResponseData(:,1,indf) = H;
-            indfOld = indf;
+            passData = GetDataFromFile(1,'passData',opt);
+            indf = passData.indf;
+            H = passData.H;
+            C = passData.C;
+            FRD.ResponseData(:,1,indf) = H;
             statGUI(f,indf,H,FRD,C);drawnow
         catch
             disp('No Data');
@@ -112,7 +102,7 @@ subplot(211);opt.ax=axis;statGUIg.ax=opt.ax;
 if all(isnan(FRD.ResponseData(:)));opt.ax=[];end
 opt.hold=true;opt.ls='r.';opt.grid=true;
 %magphase(f,squeeze(H(yid,uid,:)),opt);
-magphase(f(indf),squeeze(FRD.ResponseData(yid,uid,indf)),opt);
+magphase(f,squeeze(FRD.ResponseData(yid,uid,indf)),opt);
 subplot(211),title(['u1->y' int2str(yid)])
 
 if C>0.999

@@ -45,16 +45,29 @@ blockSize = 10000;
 startstr=['cmd /c start /min matlab -nosplash -nodesktop -minimize ' ...
    '-r "run(''',handles.homePath,'\functions\multisine\','simo_multisine_GUI'')"'];
 dos(startstr);
-UDP.ready = false;
+%UDP.ready = false;
+readPass = false;
+PassDataThruFile(2,'passRead',readPass);
 
 % Pass data to GUI process
-instrreset;
-uh=startUDP('Host');
-while ~UDP.ready
-   pause(1);
+%instrreset;
+%uh=startUDP('Host');
+%while ~UDP.ready
+%   pause(1);
+%end
+%PassDatagram(uh,'f',Freqs); % Pass frequency list
+%PassDatagram(uh,'ny',ny); % Pass ny
+while readPass == false
+    pause(1)
+    opt.keep = true;
+    readPass = GetDataFromFile(2,'passRead',opt);
 end
-PassDatagram(uh,'f',Freqs); % Pass frequency list
-PassDatagram(uh,'ny',ny); % Pass ny
+passData.f = Freqs;
+passData.ny = ny;
+passData.indf = 1;
+passData.H = 0;
+passData.C = 0;
+PassDataThruFile(1,'passData',passData);
 
 % Initiate
 frdsys=frd(NaN*zeros(ny-nu,length(CH.reference),nf),2*pi*Freqs,'FrequencyUnit','rad/s');
@@ -70,7 +83,7 @@ while 1,
 end
 
 % This is the definition of stepped sine
-if handles.steppedSine == 1
+if handles.steppedSine.Value == 1
     K=nf; % For stepped sine
 end
 
@@ -152,10 +165,10 @@ if ~isempty(multisine.session.Channels) &&  ~isempty(multisine.channelInfo.refer
                     
                     % Pass data to GUI process
                     % flushoutput(uh);
-                    PassDatagram(uh,'indf',indf);
-                    PassDatagram(uh,'Hr',real(H));
-                    PassDatagram(uh,'Hi',imag(H));
-                    PassDatagram(uh,'C',C);
+                    %PassDatagram(uh,'indf',indf);
+                    %PassDatagram(uh,'Hr',real(H));
+                    %PassDatagram(uh,'Hi',imag(H));
+                    %PassDatagram(uh,'C',C);
                 else
                     [iret,H,ynotused,C]=simostationarityengine(ynotused,Ts,w,refch,Ncyc,Ct,H0,opt);
                     H0=H;
@@ -168,6 +181,15 @@ if ~isempty(multisine.session.Channels) &&  ~isempty(multisine.channelInfo.refer
                     %PassDatagram(uh,'C',C);
                 end
                 
+                passData.indf = indf;
+                passData.H = H;
+                passData.C = C;
+                PassDataThruFile(1,'passData',passData);
+                %pause(0.01);
+            end
+            
+            if O > 400
+                C
             end
             
             % Reset
@@ -240,14 +262,18 @@ if ~isempty(multisine.session.Channels) &&  ~isempty(multisine.channelInfo.refer
         end
         
         Hm = mean(Hs,4);
-        PassDatagram(uh,'indf',indf);
-        PassDatagram(uh,'Hr',real(Hm));
-        PassDatagram(uh,'Hi',imag(Hm));
-        PassDatagram(uh,'C',C);
+        %PassDatagram(uh,'indf',indf);
+        %PassDatagram(uh,'Hr',real(Hm));
+        %PassDatagram(uh,'Hi',imag(Hm));
+        %PassDatagram(uh,'C',C);
+        passData.indf = indf;
+        passData.H = Hm;
+        passData.C = C;
+        PassDataThruFile(1,'passData',passData);
         frdsys.ResponseData(:,:,indf) = Hm;
         
     end
-    PassDatagram(uh,'StopTheGUI',1);
+    %PassDatagram(uh,'StopTheGUI',1);
     multisine.session.stop();
     delete(LAvail);
     delete(LReqrd);

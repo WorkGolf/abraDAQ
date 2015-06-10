@@ -116,7 +116,7 @@ if nargout==0,
     end
     axis tight
     ax=axis;
-    axis([round(f(1),1,'significant') (round(f(end),1,'significant')/expo+1)*expo ax(3) ax(4)]);
+    %axis([round(f(1),1,'significant') (round(f(end),1,'significant')/expo+1)*expo ax(3) ax(4)]);
     ax=axis;
   else
     if range
