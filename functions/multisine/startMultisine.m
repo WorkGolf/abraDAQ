@@ -39,15 +39,15 @@ nu = length(CH.reference); % number of inputs
 ny = length(CH.active); % number of outputs
 yind = 1:ny; yind(refch) = [];
 nf = length(Freqs);
-blockSize = 10000;
+blockSize = 16000;
 
-% Start up parallel Matlab process that has GUI
-startstr=['cmd /c start /min matlab -nosplash -nodesktop -minimize ' ...
-   '-r "run(''',handles.homePath,'\functions\multisine\','simo_multisine_GUI'')"'];
-dos(startstr);
-%UDP.ready = false;
-readPass = false;
-PassDataThruFile(2,'passRead',readPass);
+% % Start up parallel Matlab process that has GUI
+% startstr=['cmd /c start /min matlab -nosplash -nodesktop -minimize ' ...
+%    '-r "run(''',handles.homePath,'\functions\multisine\','simo_multisine_GUI'')"'];
+% dos(startstr);
+% %UDP.ready = false;
+% readPass = false;
+% PassDataThruFile(2,'passRead',readPass);
 
 % Pass data to GUI process
 %instrreset;
@@ -57,17 +57,17 @@ PassDataThruFile(2,'passRead',readPass);
 %end
 %PassDatagram(uh,'f',Freqs); % Pass frequency list
 %PassDatagram(uh,'ny',ny); % Pass ny
-while readPass == false
-    pause(1)
-    opt.keep = true;
-    readPass = GetDataFromFile(2,'passRead',opt);
-end
-passData.f = Freqs;
-passData.ny = ny;
-passData.indf = 1;
-passData.H = 0;
-passData.C = 0;
-PassDataThruFile(1,'passData',passData);
+% while readPass == false
+%     pause(1)
+%     opt.keep = true;
+%     readPass = GetDataFromFile(2,'passRead',opt);
+% end
+% passData.f = Freqs;
+% passData.ny = ny;
+% passData.indf = 1;
+% passData.H = 0;
+% passData.C = 0;
+% PassDataThruFile(1,'passData',passData);
 
 % Initiate
 frdsys=frd(NaN*zeros(ny-nu,length(CH.reference),nf),2*pi*Freqs,'FrequencyUnit','rad/s');
@@ -111,12 +111,12 @@ if ~isempty(multisine.session.Channels) &&  ~isempty(multisine.channelInfo.refer
     % ------------------------------------- Loop over number of frequency sets
     for I=1:K
         I
-        C = 0;
+        %C = 0;
         y = [];
         ynotused = [];
         iret = -1;
         opt = [];
-        H0 = [];
+        %H0 = [];
         %H = zeros(ny-nu,1);
         
         haveData = false;
@@ -145,7 +145,7 @@ if ~isempty(multisine.session.Channels) &&  ~isempty(multisine.channelInfo.refer
         while iret == -1
             O = O + 1;
             
-            pause(0.0001);
+            pause(0.0001)
             
             % Estimate transfer functions
             if haveData == true
@@ -153,7 +153,7 @@ if ~isempty(multisine.session.Channels) &&  ~isempty(multisine.channelInfo.refer
                 haveReadData = true;
                 haveData = false;
             end
-            
+
             if haveDataContinous == true
                 if firstTime == true
                     [iret,H,ynotused,C,opt]=simostationarityengine(ynotused,Ts,w,refch,Ncyc,Ct);
@@ -162,7 +162,7 @@ if ~isempty(multisine.session.Channels) &&  ~isempty(multisine.channelInfo.refer
                     if ~isempty(opt)
                         firstTime = false;
                     end
-                    
+                    pause(0.01)
                     % Pass data to GUI process
                     % flushoutput(uh);
                     %PassDatagram(uh,'indf',indf);
@@ -181,16 +181,16 @@ if ~isempty(multisine.session.Channels) &&  ~isempty(multisine.channelInfo.refer
                     %PassDatagram(uh,'C',C);
                 end
                 
-                passData.indf = indf;
-                passData.H = H;
-                passData.C = C;
-                PassDataThruFile(1,'passData',passData);
-                %pause(0.01);
+                %passData.indf = indf;
+                %passData.H = H;
+                %passData.C = C;
+                %PassDataThruFile(1,'passData',passData);
+                pause(0.0001);
             end
             
-            if O > 400
-                C
-            end
+            %if O > 400
+            %    C
+            %end
             
             % Reset
             if multisine.session.IsRunning == 0
@@ -206,7 +206,7 @@ if ~isempty(multisine.session.Channels) &&  ~isempty(multisine.channelInfo.refer
         end
         
         % Obtain statistics
-        Hs = [];
+        Hs = zeros(size(H,1),size(H,2),size(H,3),Nstat);
         Ctmean = CtMeanInput;
         CtmeanChanged = false;
         
@@ -266,10 +266,10 @@ if ~isempty(multisine.session.Channels) &&  ~isempty(multisine.channelInfo.refer
         %PassDatagram(uh,'Hr',real(Hm));
         %PassDatagram(uh,'Hi',imag(Hm));
         %PassDatagram(uh,'C',C);
-        passData.indf = indf;
-        passData.H = Hm;
-        passData.C = C;
-        PassDataThruFile(1,'passData',passData);
+        %passData.indf = indf;
+        %passData.H = Hm;
+        %passData.C = C;
+        %PassDataThruFile(1,'passData',passData);
         frdsys.ResponseData(:,:,indf) = Hm;
         
     end
@@ -283,7 +283,10 @@ if ~isempty(multisine.session.Channels) &&  ~isempty(multisine.channelInfo.refer
     % Clean-up
     multisine.session.release();
     delete(multisine.session);
-    toc
+    
+    timeElapsed = toc
+    multisine.Metadata.TimeElapsed = timeElapsed;
+    multisine.Metadata.TestDateEnd = datestr(now,'mm-dd-yyyy HH:MM:SS');
     
     % Clear DAQ
     daq.reset;
